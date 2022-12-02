@@ -66,9 +66,10 @@ build_configs() {
         "CT_MIRROR_BASE_URL=\"${MIRROR_URL}\"" \
         >> defconfig
     fi
-    if [ -z "${host}" ] || [ "${host}" = 'native' ]; then
-      host=$(${CC:-cc} -dumpmachine)
-    else
+    if [ "${host}" = 'native' ]; then
+      host=''
+    fi
+    if [ -n "${host}" ]; then
       printf '%s\n' \
         'CT_CANADIAN=y' \
         "CT_HOST=\"${host}\"" \
@@ -85,6 +86,9 @@ build_configs() {
     picolibc_version=$(sed -n -e 's/^CT_PICOLIBC_VERSION="\(.*\)"/\1/p' .config)
     CT_TARGET=$(ct-ng show-tuple)
     cd "${CT_PREFIX}/${host:+HOST-${host}/}${CT_TARGET}"
+    if [ -z "${host}" ]; then
+      host=$(${CC:-cc} -dumpmachine)
+    fi
     host_vendor=$(printf '%s' "${host}" | cut -d - -f 2)
     host_os=$(printf '%s' "${host}" | cut -d - -f 3)
     if [ "${host_vendor}" != "unknown" ] && [ "${host_vendor}" != "pc" ]; then
