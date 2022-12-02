@@ -97,14 +97,18 @@ build_configs() {
     host_cpu=${host%%-*}
     release=${CT_TARGET}-toolchain-${gcc_version}-${picolibc_version}
     archive=${release}-${host_cpu}-${host_os}.tar.xz
+    mkdir -p "${ARCHIVE_DIR}"
+    rm -f "${ARCHIVE_DIR}/${archive}"
     find ./. -print0 | \
       LC_ALL=C sort -z | \
       tar --numeric-owner --owner=0 --group=0 \
         --transform "s,^\./\.,${release},S" \
         --no-recursion --null -T - -acf "${ARCHIVE_DIR}/${archive}"
-    cp build.log.bz2 "${ARCHIVE_DIR}/build-log-${release}-${host_cpu}-${host_os}.log.bz2"
+    rm -f "${ARCHIVE_DIR}/build-log-${release}-${host_cpu}-${host_os}.log.bz2"
+    cat < build.log.bz2 > "${ARCHIVE_DIR}/build-log-${release}-${host_cpu}-${host_os}.log.bz2"
     cd "${ARCHIVE_DIR}"
     for hash in sha256sum sha512sum b2sum; do
+      rm -f "${archive}.${hash}"
       ${hash} -b "${archive}" > "${archive}.${hash}"
     done
   ) done
@@ -116,9 +120,13 @@ build_all_configs() {
 
 check_crosstool_exists
 
+mkdir -p "${BUILD_DIR}" "${DOWNLOADS_DIR}" "${ARCHIVE_DIR}" "${PREFIX_DIR}"
+DOWNLOADS_DIR="$(cd "${DOWNLOADS_DIR}" && pwd)"
+ARCHIVE_DIR="$(cd "${ARCHIVE_DIR}" && pwd)"
+PREFIX_DIR="$(cd "${PREFIX_DIR}" && pwd)"
+
 print_summary
 print_build_matrix
-mkdir -p "${BUILD_DIR}" "${DOWNLOADS_DIR}" "${ARCHIVE_DIR}"
 
 for host in ${HOSTS}; do
   build_all_configs
